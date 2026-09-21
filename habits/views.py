@@ -54,6 +54,7 @@ class HabitListView(View):
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class HabitDetailView(View):
     def get(self, request, id):
         habit = get_object_or_404(Habit, id=id)
@@ -67,6 +68,29 @@ class HabitDetailView(View):
             'created_at': habit.created_at
         }
         return JsonResponse(data)
+
+    def put(self, request, id):
+        try:
+            habit = get_object_or_404(Habit, id=id)
+            new_data = json.loads(request.body)
+            
+            form = HabitForm(new_data, instance=habit)
+            
+            if form.is_valid():
+                habit = form.save()
+                return JsonResponse({
+                    'id': habit.id,
+                    'name': habit.name,
+                    'description': habit.description,
+                    'repeat_time': str(habit.repeat_time),
+                    'times_per_day': habit.times_per_day,
+                    'max_streak': habit.max_streak,
+                    'created_at': habit.created_at
+                }, status=200) 
+            
+            return JsonResponse({'errors': form.errors}, status=400)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ScheduleListView(View):
@@ -99,6 +123,7 @@ class ScheduleListView(View):
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class ScheduleDetailView(View):
     def get(self, request, habit_id, id):
         schedule = get_object_or_404(HabitSchedule, id=id, habit_id=habit_id)
@@ -109,6 +134,25 @@ class ScheduleDetailView(View):
             'active': schedule.active
         }
         return JsonResponse(data)
+
+    def put(self, request, habit_id, id):
+        try:
+            schedule = get_object_or_404(HabitSchedule, id=id, habit_id=habit_id)
+            new_data = json.loads(request.body)
+            new_data['habit'] = habit_id 
+            
+            form = HabitScheduleForm(new_data, instance=schedule)
+            if form.is_valid():
+                schedule = form.save()
+                return JsonResponse({
+                    'id': schedule.id,
+                    'habit_id': schedule.habit_id,
+                    'weekday': schedule.weekday,
+                    'active': schedule.active
+                }, status=200)
+            return JsonResponse({'errors': form.errors}, status=400)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
 
 class ScheduleGlobalDetailView(View):
@@ -176,6 +220,7 @@ class LogListView(View):
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class LogDetailView(View):
     def get(self, request, habit_id, id):
         log = get_object_or_404(HabitLog, id=id, habit_id=habit_id)
@@ -187,6 +232,26 @@ class LogDetailView(View):
             'note': log.note
         }
         return JsonResponse(data)
+
+    def put(self, request, habit_id, id):
+        try:
+            log = get_object_or_404(HabitLog, id=id, habit_id=habit_id)
+            new_data = json.loads(request.body)
+            new_data['habit'] = habit_id
+            
+            form = HabitLogForm(new_data, instance=log)
+            if form.is_valid():
+                log = form.save()
+                return JsonResponse({
+                    'id': log.id,
+                    'habit_id': log.habit_id,
+                    'completed_at': log.completed_at,
+                    'count_done': log.count_done,
+                    'note': log.note
+                }, status=200)
+            return JsonResponse({'errors': form.errors}, status=400)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
 
 class LogGlobalDetailView(View):
@@ -269,6 +334,7 @@ class StatListView(View):
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class StatDetailView(View):
     def get(self, request, habit_id, id):
         stat = get_object_or_404(HabitStat, id=id, habit_id=habit_id)
@@ -283,6 +349,29 @@ class StatDetailView(View):
             'success_rate': stat.success_rate
         }
         return JsonResponse(data)
+
+    def put(self, request, habit_id, id):
+        try:
+            stat = get_object_or_404(HabitStat, id=id, habit_id=habit_id)
+            new_data = json.loads(request.body)
+            new_data['habit'] = habit_id
+            
+            form = HabitStatForm(new_data, instance=stat)
+            if form.is_valid():
+                stat = form.save()
+                return JsonResponse({
+                    'id': stat.id,
+                    'habit_id': stat.habit_id,
+                    'period_start': stat.period_start,
+                    'period_end': stat.period_end,
+                    'total_done': stat.total_done,
+                    'current_streak': stat.current_streak,
+                    'max_streak': stat.max_streak,
+                    'success_rate': stat.success_rate
+                }, status=200)
+            return JsonResponse({'errors': form.errors}, status=400)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
 
 class StatGlobalDetailView(View):
